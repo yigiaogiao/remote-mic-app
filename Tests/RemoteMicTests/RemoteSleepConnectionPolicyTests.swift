@@ -77,23 +77,27 @@ struct RemoteSleepConnectionPolicyTests {
         #expect(result11)
     }
 
-    @Test func recoveryDiscoveryIsOptInOneShotAndResettable() {
+    @Test func recoveryDiscoveryPersistsAcrossRetriesUntilReadyOrSuspension() {
         var policy = RemoteSleepReconnectPolicy()
-        let ordinary = policy.consume()
+        let ordinary = policy.shouldDiscover
         #expect(!ordinary)
         policy.prepare(hasSavedTarget: false)
-        let unknownTarget = policy.consume()
+        let unknownTarget = policy.shouldDiscover
         #expect(!unknownTarget)
         policy.prepare(hasSavedTarget: true)
-        let firstWakeAttempt = policy.consume()
-        let nextAttempt = policy.consume()
+        let firstWakeAttempt = policy.shouldDiscover
+        let nextAttempt = policy.shouldDiscover
         #expect(firstWakeAttempt)
-        #expect(!nextAttempt)
-        policy.prepare(hasSavedTarget: true)
+        #expect(nextAttempt)
+        #expect(policy.retryDelayIfActive(enabledForTarget: true) == 3)
+        #expect(policy.retryDelayIfActive(enabledForTarget: false) == nil)
+        // Waiting several cycles for a sleeping remote must not consume recovery.
+        for _ in 0..<50 { #expect(policy.shouldDiscover) }
         policy.reset()
-        let sleptAgain = policy.consume()
+        #expect(policy.retryDelayIfActive(enabledForTarget: true) == nil)
+        let sleptAgain = policy.shouldDiscover
         #expect(!sleptAgain)
-        #expect(RemoteSleepReconnectPolicy.discoveryWindow == 30)
+        #expect(RemoteSleepReconnectPolicy.discoveryWindow == 20)
     }
 
 }

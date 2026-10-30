@@ -157,6 +157,8 @@ final class XiaomiBluetoothBridge: NSObject {
     private var systemSuspension = BluetoothSystemSuspensionState()
     private var sleepReconnectPolicy = RemoteSleepReconnectPolicy()
     private var sleepRecoveryDiscoveryCycle = false
+    private var sleepRecoveryStartedUptime: TimeInterval?
+    private var sleepRecoveryConnectedUptime: TimeInterval?
     private var activeLinkRecovery = BluetoothActiveLinkRecovery()
     private var requestedDisconnectReason: String?
 
@@ -173,6 +175,8 @@ final class XiaomiBluetoothBridge: NSObject {
     func prepareSleepIsolationRecovery() {
         guard shouldRun else { return }
         sleepReconnectPolicy.prepare(hasSavedTarget: targetIdentifier != nil)
+        sleepRecoveryStartedUptime = ProcessInfo.processInfo.systemUptime
+        sleepRecoveryConnectedUptime = nil
     }
 
     private var capabilities = XiaomiBluetoothBridge.defaultCapabilities
@@ -281,6 +285,8 @@ final class XiaomiBluetoothBridge: NSObject {
         shouldRun = false
         activeLinkRecovery.reset()
         sleepReconnectPolicy.reset()
+        sleepRecoveryStartedUptime = nil
+        sleepRecoveryConnectedUptime = nil
         sleepRecoveryDiscoveryCycle = false
         reconnectWorkItem?.cancel()
         cancelScanTimeout()
@@ -352,6 +358,8 @@ final class XiaomiBluetoothBridge: NSObject {
         if suspended {
             guard systemSuspension.suspend(phase: lifecycle) else { return }
             sleepReconnectPolicy.reset()
+            sleepRecoveryStartedUptime = nil
+            sleepRecoveryConnectedUptime = nil
             sleepRecoveryDiscoveryCycle = false
             stopBatteryPolling(reason: "system_suspended")
             central?.stopScan()
@@ -493,9 +501,14 @@ final class XiaomiBluetoothBridge: NSObject {
               central.state == .poweredOn
         else { return }
         resetPeripheral()
-        sleepRecoveryDiscoveryCycle = sleepReconnectPolicy.consume()
+        if settings.sleepConnectionIsolationTarget != targetIdentifier {
+            sleepReconnectPolicy.reset()
+            sleepRecoveryStartedUptime = nil
+            sleepRecoveryConnectedUptime = nil
+        }
+        sleepRecoveryDiscoveryCycle = sleepReconnectPolicy.shouldDiscover
         if sleepRecoveryDiscoveryCycle {
-            AppLogger.shared.write("BLE SLEEP_RECOVERY phase=started result=discovery_first window_ms=30000")
+            AppLogger.shared.write("BLE SLEEP_RECOVERY phase=started result=discovery_first window_ms=20000")
         }
 
         if !sleepRecoveryDiscoveryCycle, reconnectPolicy.allowsCachedTargetRetrieval,
@@ -578,9 +591,8 @@ final class XiaomiBluetoothBridge: NSObject {
                   )
             else { return }
             if isSleepRecovery {
-                self.sleepRecoveryDiscoveryCycle = false
-                AppLogger.shared.write("BLE SLEEP_RECOVERY phase=completed result=fallback reason=discovery_window_expired")
-                self.finishAttempt(reconnectAfter: 0.1)
+                AppLogger.shared.write("BLE SLEEP_RECOVERY phase=waiting result=retrying reason=discovery_window_expired delay_ms=500")
+                self.finishAttempt(reconnectAfter: RemoteSleepReconnectPolicy.retryDelay)
                 return
             }
             AppLogger.shared.write(
@@ -665,6 +677,11 @@ final class XiaomiBluetoothBridge: NSObject {
         else { return }
         central.stopScan()
         cancelScanTimeout()
+        if let started = sleepRecoveryStartedUptime {
+            let elapsed = Int((ProcessInfo.processInfo.systemUptime - started) * 1_000)
+            AppLogger.shared.write("BLE SLEEP_RECOVERY phase=discovered result=connecting source=\(source) elapsed_ms=\(elapsed)")
+        }
+        sleepRecoveryConnectedUptime = nil
         peripheral = candidate
         requestedDisconnectReason = nil
         currentAttemptUsesCachedTarget = usesCachedTarget
@@ -800,6 +817,12 @@ final class XiaomiBluetoothBridge: NSObject {
     }
 
     private func nextAutomaticReconnectDelay(bypassCachedTarget: Bool) -> TimeInterval {
+        if let delay = sleepReconnectPolicy.retryDelayIfActive(
+            enabledForTarget: targetIdentifier != nil && settings.sleepConnectionIsolationTarget == targetIdentifier
+        ) {
+            AppLogger.shared.write("BLE SLEEP_RECOVERY phase=retry_scheduled result=retrying delay_ms=3000")
+            return delay
+        }
         let delay = reconnectPolicy.nextAutomaticDelay(
             bypassCachedTarget: bypassCachedTarget,
             jitterUnit: Double.random(in: 0 ... 1)
@@ -1001,6 +1024,15 @@ final class XiaomiBluetoothBridge: NSObject {
             reconnectPolicy.reset()
             currentAttemptUsesCachedTarget = false
             lifecycle = .ready(generation)
+            if let started = sleepRecoveryStartedUptime {
+                let now = ProcessInfo.processInfo.systemUptime
+                let initialization = sleepRecoveryConnectedUptime.map { Int((now - $0) * 1_000) } ?? -1
+                AppLogger.shared.write("BLE SLEEP_RECOVERY phase=completed result=ready elapsed_ms=\(Int((now - started) * 1_000)) initialization_ms=\(initialization)")
+            }
+            sleepReconnectPolicy.reset()
+            sleepRecoveryDiscoveryCycle = false
+            sleepRecoveryStartedUptime = nil
+            sleepRecoveryConnectedUptime = nil
             if let peripheral {
                 state = .ready(peripheral.name ?? "MI RC")
                 AppLogger.shared.write("BLE READY name=\(peripheral.name ?? "MI RC")")
@@ -1364,6 +1396,11 @@ extension XiaomiBluetoothBridge: CBCentralManagerDelegate {
             batteryServiceUUID,
             deviceInformationServiceUUID,
         ])
+        if let started = sleepRecoveryStartedUptime {
+            let now = ProcessInfo.processInfo.systemUptime
+            sleepRecoveryConnectedUptime = now
+            AppLogger.shared.write("BLE SLEEP_RECOVERY phase=connected result=initializing elapsed_ms=\(Int((now - started) * 1_000))")
+        }
         AppLogger.shared.write("BLE CONNECTED name=\(peripheral.name ?? "unknown")")
     }
 

@@ -40,16 +40,17 @@ struct RemoteSleepConnectionPolicy {
     }
 }
 
-/// A one-shot discovery-first attempt after releasing this device's sleep isolation.
-/// A known UUID is required; no persisted or global reconnect policy is changed.
+/// Discovery remains armed after isolation release until READY or suspension.
+/// Idle peripherals are not failures: avoid exponential gaps that miss button broadcasts.
 struct RemoteSleepReconnectPolicy {
-    static let discoveryWindow: TimeInterval = 30
+    static let discoveryWindow: TimeInterval = 20
+    static let retryDelay: TimeInterval = 0.5
+    static let connectionFailureDelay: TimeInterval = 3
     private(set) var pending = false
     mutating func prepare(hasSavedTarget: Bool) { pending = hasSavedTarget }
-    mutating func consume() -> Bool {
-        let useDiscovery = pending
-        pending = false
-        return useDiscovery
+    var shouldDiscover: Bool { pending }
+    func retryDelayIfActive(enabledForTarget: Bool) -> TimeInterval? {
+        pending && enabledForTarget ? Self.connectionFailureDelay : nil
     }
     mutating func reset() { pending = false }
 }
