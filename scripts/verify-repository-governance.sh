@@ -87,6 +87,8 @@ def fail(message):
 
 
 def fields(text, language, required=False):
+    # Browser-edited PR descriptions may use CRLF; parse the same Markdown as LF.
+    text = text.replace(chr(13) + chr(10), chr(10)).replace(chr(13), chr(10))
     blocks = re.findall(rf"^```{re.escape(language)}[ \t]*\n(.*?)^```[ \t]*$", text, re.M | re.S)
     if required and len(blocks) != 1:
         fail(f"expected one {language} block, found {len(blocks)}")
