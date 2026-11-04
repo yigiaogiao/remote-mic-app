@@ -8,17 +8,17 @@
 
 ## 开发前检查
 
-1. 执行 `git fetch origin main`，记录最新 `origin/main` 的完整 SHA。新功能必须从该 Commit 创建独立分支和持久化 worktree，不得基于旧功能分支、其他未合入 PR、`release-main` 或本地过期的 `main` 直接开发。
+1. 执行 `git fetch origin codex/xiaomi-sleep-connection`，记录最新 `origin/codex/xiaomi-sleep-connection` 的完整 SHA。新功能必须从该 Commit 创建独立分支和持久化 worktree，不得基于旧功能分支、其他未合入 PR、`release-main` 或本地过期的 `codex/xiaomi-sleep-connection` 直接开发。
 2. 扫描全部 Open PR（含 Draft）的标题和标签。按关键词、模块和路径筛选相关候选，再查看候选描述、文件和必要 Diff。不能只根据标题判定候选无重复；证据不足时扩大检查。
-3. 同时检查最新 `origin/main` 的代码、测试和 `TODO.md`，确认功能没有已经实现、已经被替代或已经明确不做。
+3. 同时检查最新 `origin/codex/xiaomi-sleep-connection` 的代码、测试和 `TODO.md`，确认功能没有已经实现、已经被替代或已经明确不做。
 4. 如果发现重叠 PR，优先在已有 PR 上协作、补充或重新基于最新主线接续；未经维护者明确决定，不得再创建一个功能相同的 PR。PR 描述必须列出查重结果和相关 PR 链接。
 5. 明确本次功能的用户目标、范围、不做事项、受影响模块、兼容边界和验证方式。一个 PR 只承载一个可独立审查的功能，不得混入无关重构、清理或其他功能。
 
 推荐使用以下命令完成基础查重：
 
 ```bash
-git fetch origin main
-git rev-parse origin/main
+git fetch origin codex/xiaomi-sleep-connection
+git rev-parse origin/codex/xiaomi-sleep-connection
 gh pr list --state open --limit 200
 ```
 
@@ -28,8 +28,8 @@ gh pr list --state open --limit 200
 G-MAIN.reference=BRANCH_MANAGEMENT.md
 ```
 
-- 分支、worktree、提交、PR 目标和 Hotfix 例外必须遵守 [`BRANCH_MANAGEMENT.md`](BRANCH_MANAGEMENT.md)。普通新功能 PR 的目标分支只能是 `main`。
-- 开发开始时必须基于最新 `origin/main`。创建 PR 前再次 fetch；如果主线前进，检查新增 diff、冲突及共享依赖影响。存在相关变化时同步主线并重新运行受影响验证；无关且无冲突时，记录最新 SHA 和判断依据即可。发布仍锁定精确主线。
+- 分支、worktree、提交、PR 目标和 Hotfix 例外必须遵守 [`BRANCH_MANAGEMENT.md`](BRANCH_MANAGEMENT.md)。普通新功能 PR 的目标分支只能是 `codex/xiaomi-sleep-connection`。
+- 开发开始时必须基于最新 `origin/codex/xiaomi-sleep-connection`。创建 PR 前再次 fetch；如果主线前进，检查新增 diff、冲突及共享依赖影响。存在相关变化时同步主线并重新运行受影响验证；无关且无冲突时，记录最新 SHA 和判断依据即可。发布仍锁定精确主线。
 - 不得用旧分支整体覆盖主线，也不得为了减少冲突绕过当前架构、测试或产品规范。
 - PR 合入前必须确认变更仍然只包含本功能，并且没有夹带其他 worktree 或用户未提交的修改。
 
@@ -73,7 +73,7 @@ G-CI.reference=BRANCH_MANAGEMENT.md
 新功能 PR 必须使用 [PR 提交模板](.github/PULL_REQUEST_TEMPLATE.md)，并在描述中包含：
 
 1. 用户问题、功能目标、范围和明确不做事项。
-2. 开发起点的 `origin/main` 完整 SHA，以及提交前再次检查主线的结果和同步决定。
+2. 开发起点的 `origin/codex/xiaomi-sleep-connection` 完整 SHA，以及提交前再次检查主线的结果和同步决定。
 3. Open PR 查重结果、检索日期和所有相关 PR 链接。
 4. 修改的模块和每个文件存在的必要性。
 5. 自动化、构建、日志、截图、真实设备和第三方流程的验证结果与边界。
@@ -84,11 +84,11 @@ G-CI.reference=BRANCH_MANAGEMENT.md
 
 ## 合入前检查清单
 
-- [ ] 功能从最新 `origin/main` 开始，提交 PR 前已检查最新主线，并按影响决定同步和验证。
+- [ ] 功能从最新 `origin/codex/xiaomi-sleep-connection` 开始，提交 PR 前已检查最新主线，并按影响决定同步和验证。
 - [ ] 已扫描全部 Open PR 的标题和标签，并详细检查相关候选，记录筛选依据和相关链接。
 - [ ] PR 只包含一个新功能和直接必要的修改。
 - [ ] 未读取或依赖任何第三方 App 的私有文件、数据或协议。
 - [ ] 已同步必要的日志、测试手册、`TODO.md` 和专项产品规范。
 - [ ] UI 变更已附实际运行截图，并覆盖必要语言、外观、尺寸和状态。
 - [ ] 已区分自动化结果、截图证据、代理实测和真实用户/硬件验收边界。
-- [ ] PR 描述已完整填写，未完成项目保持 Draft，目标分支为 `main`。
+- [ ] PR 描述已完整填写，未完成项目保持 Draft，目标分支为 `codex/xiaomi-sleep-connection`。

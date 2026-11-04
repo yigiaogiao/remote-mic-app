@@ -87,6 +87,8 @@ def fail(message):
 
 
 def fields(text, language, required=False):
+    # Browser-edited PR descriptions may use CRLF; parse the same Markdown as LF.
+    text = text.replace(chr(13) + chr(10), chr(10)).replace(chr(13), chr(10))
     blocks = re.findall(rf"^```{re.escape(language)}[ \t]*\n(.*?)^```[ \t]*$", text, re.M | re.S)
     if required and len(blocks) != 1:
         fail(f"expected one {language} block, found {len(blocks)}")
@@ -107,8 +109,9 @@ def fields(text, language, required=False):
 
 policies = {
     "BRANCH_MANAGEMENT.md": {
-        "G-MAIN.start": "latest-origin-main", "G-MAIN.sync": "impact-based",
-        "G-MAIN.release": "exact-approved-main", "G-WORK.pr": "single",
+        "G-MAIN.branch": "codex/xiaomi-sleep-connection",
+        "G-MAIN.start": "latest-origin-primary", "G-MAIN.sync": "impact-based",
+        "G-MAIN.release": "historical-upstream-only", "G-WORK.pr": "single",
         "G-DUP.scan": "all-open-titles-labels", "G-DUP.inspect": "relevant-description-files-diff",
         "G-AUDIT.inventory": "required", "G-AUDIT.cleanup": "separate-authorization",
         "G-TODO.branch": "codex/todo_list", "G-TODO.delivery": "batch-or-draft",
@@ -149,6 +152,18 @@ for filename, expected in policies.items():
         prose = re.sub(r"(?ms)^```governance-policy.*?^```", "", section)
         if not re.search(r"(?m)^(?:- |[0-9]+\. ).+", prose):
             fail(f"{filename} policy section lacks normative prose")
+
+# Keep the personal development baseline consistent across entry points.
+primary = policies["BRANCH_MANAGEMENT.md"]["G-MAIN.branch"]
+for filename in ("AGENTS.md", "FEATURE_DEVELOPMENT.md", ".github/PULL_REQUEST_TEMPLATE.md"):
+    text = Path(filename).read_text()
+    if "origin/main" in text or "git fetch origin main" in text or chr(96) + "main" + chr(96) in text:
+        fail(f"{filename} still directs development to main")
+    if f"origin/{primary}" not in text:
+        fail(f"{filename} lacks the personal development baseline")
+workflow = Path(".github/workflows/repository-governance.yml").read_text()
+if workflow.count(f"branches: [{primary}]") != 2:
+    fail("governance workflow must cover primary-branch PRs and pushes")
 
 navigation = Path("DOCUMENTATION.md").read_text()
 readme = Path("README.md").read_text()

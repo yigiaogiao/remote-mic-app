@@ -2,6 +2,8 @@
 
 本文只负责帮助开发者、维护者和自动化 Agent 快速定位文档，不定义新的产品或流程规则。规范层级、冲突处理方式和各文档边界以 [`AGENTS.md`](AGENTS.md) 为准。
 
+本仓库开发主线为 `codex/xiaomi-sleep-connection`。日常合并与继承发布流程的适用边界见 [分支与提交管理策略](BRANCH_MANAGEMENT.md#本仓库的主线与适用范围)。
+
 ## AI 与开发者阅读顺序
 
 1. 先完整阅读 [`AGENTS.md`](AGENTS.md)，确认当前任务适用的硬门禁和规范入口。
