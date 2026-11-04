@@ -8,16 +8,16 @@
 - [ ] Bug 修复
 - [ ] 文档、测试或内部维护
 
-> 新功能 PR 必须完整遵守 [新功能开发规范](https://github.com/HD838A/remote-mic-app/blob/main/FEATURE_DEVELOPMENT.md)；分支和提交遵守 [分支与提交管理策略](https://github.com/HD838A/remote-mic-app/blob/main/BRANCH_MANAGEMENT.md)；仓库专项门禁遵守 [仓库开发规则](https://github.com/HD838A/remote-mic-app/blob/main/AGENTS.md)。Bug 或文档 PR 可将明确不适用的项目标记为 N/A，但不得跳过适用门禁。
+> 新功能 PR 必须完整遵守 [新功能开发规范](https://github.com/yigiaogiao/remote-mic-app/blob/codex/xiaomi-sleep-connection/FEATURE_DEVELOPMENT.md)；分支和提交遵守 [分支与提交管理策略](https://github.com/yigiaogiao/remote-mic-app/blob/codex/xiaomi-sleep-connection/BRANCH_MANAGEMENT.md)；仓库专项门禁遵守 [仓库开发规则](https://github.com/yigiaogiao/remote-mic-app/blob/codex/xiaomi-sleep-connection/AGENTS.md)。Bug 或文档 PR 可将明确不适用的项目标记为 N/A，但不得跳过适用门禁。
 
 ## 新功能开发基线与查重
 
 - [ ] 不适用：此 PR 不是新功能。
-- [ ] 已执行 `git fetch origin main`，并从最新 `origin/main` 创建本功能的独立分支和持久化 worktree。
-- [ ] 已在提交 PR 前检查最新 `origin/main`，记录影响判断，并按需同步和验证。
+- [ ] 已执行 `git fetch origin codex/xiaomi-sleep-connection`，并从最新 `origin/codex/xiaomi-sleep-connection` 创建本功能的独立分支和持久化 worktree。
+- [ ] 已在提交 PR 前检查最新 `origin/codex/xiaomi-sleep-connection`，记录影响判断，并按需同步和验证。
 - [ ] 已扫描全部 Open PR 标题和标签，详细检查相关候选的描述、文件和必要 Diff。
 
-开发起点 `origin/main` SHA：
+开发起点 `origin/codex/xiaomi-sleep-connection` SHA：
 
 Open PR 查重日期、查询结果及相关链接：
 

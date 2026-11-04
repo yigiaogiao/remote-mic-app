@@ -6,32 +6,41 @@
 
 PR 的 `governance` 块使用稳定字段。每个字段只出现一次；填写具体值，禁止保留占位内容。`approval_basis=approved-plan` 表示用户已批准具体对照、文件范围和验证计划，且 `plan_changed=false`；`reviewed-result` 表示用户已确认本次结果及新增差异；核心治理的 `pending` 只能用于 Draft；Ready 的 `validation_result` 必须为 `pass`。批准来源必须来自维护者或用户，Agent 自述和 CI 结果不能替代。
 
-## main 不变量
+## 本仓库的主线与适用范围
+
+- 本仓库由用户独立维护，远端为 `yigiaogiao/remote-mic-app`；开发主线及普通 PR 目标为 `codex/xiaomi-sleep-connection`。不向原项目自动提交 PR；仍保留的 `main` 不是本仓库开发主线。
+- Orca 的“主要”表示主要工作树，不决定 Git 分支名。主要工作树只同步开发主线；每项独立开发仍使用独立分支及持久化 worktree，同一任务可继续使用已有工作树。
+- 本次迁移不重命名或删除分支，不改远端默认分支，不搬运未验收代码；允许使用已与远端开发主线精确一致且干净的 `yigiaogiao/candlefish` 工作树承载本次独立治理修改。
+- 本文件所有 Preview、Stable、Hotfix、私有 Draft 和发布控制面规定，以及 `RELEASING.md`，保留为继承的原项目发布流程参考，不构成本个人仓库已配置可用的发布入口。发布脚本仍绑定原项目主线、仓库和渠道，不能因开发主线迁移而直接使用；本节的适用范围优先于下文继承的发布规定。
+- 本次只迁移开发治理，保留独立任务、验证、普通 Merge 和人工治理确认门禁；个人发布能力须另立工作项迁移和验证，不得触发原项目发布或复用其凭据。
+
+## 开发主线不变量
 
 ```governance-policy
-G-MAIN.start=latest-origin-main
+G-MAIN.branch=codex/xiaomi-sleep-connection
+G-MAIN.start=latest-origin-primary
 G-MAIN.sync=impact-based
-G-MAIN.release=exact-approved-main
+G-MAIN.release=historical-upstream-only
 ```
 
-- 开始任何操作前执行 git fetch origin main，并记录 origin/main 的完整 SHA。
-- main 工作区只用于同步已合入的远端主线，不直接开发、保存临时改动或准备版本元数据。
-- 功能、Bug、发布流程和文档改动都在独立分支和持久化 worktree 中完成；分支创建点必须是当时最新的 origin/main。唯一例外是下方 TODO-only 流程使用长期共享分支 `codex/todo_list`，但仍必须通过 PR 合入 `main`。
-- 除 Hotfix 的临时审核 PR 外，PR 的目标分支只能是远端 main。合入后再次 fetch，确认本地 main 与 origin/main 精确一致。
-- `main` 必须始终处于可发布状态；未完成必要验收的功能不得先合入再等待发布分支筛选。
-- 普通 Preview 和 Stable 的发布控制面与源码都只能使用精确 `origin/main`；GitHub Actions 必须从 `main` 触发并验证它仍是远端 HEAD。
+- 开始任何操作前执行 git fetch origin codex/xiaomi-sleep-connection，并记录 origin/codex/xiaomi-sleep-connection 的完整 SHA。
+- 主线工作区只用于同步已合入的远端主线，不直接开发、保存临时改动或准备版本元数据。
+- 功能、Bug、发布流程和文档改动都在独立分支和持久化 worktree 中完成；分支创建点必须是当时最新的 origin/codex/xiaomi-sleep-connection。唯一例外是下方 TODO-only 流程使用长期共享分支 `codex/todo_list`，但仍必须通过 PR 合入 `codex/xiaomi-sleep-connection`。
+- 除 Hotfix 的临时审核 PR 外，PR 的目标分支只能是远端 `codex/xiaomi-sleep-connection`。合入后再次 fetch，确认本地 `codex/xiaomi-sleep-connection` 与 origin/codex/xiaomi-sleep-connection 精确一致。
+- `codex/xiaomi-sleep-connection` 必须始终处于可发布状态；未完成必要验收的功能不得先合入再等待发布分支筛选。
+- 开发主线选择不自动迁移发布控制面；继承发布规定的适用边界以上方说明为准。
 - 不使用普通 force-push、广泛 reset 或把其他 worktree 的未验收内容直接复制到发布分支。
 
 ## 标准功能与 Bug 流程
 
-1. **同步基线**：开始工作前执行 `git fetch origin main`，确认本地 `origin/main` 是最新远端主线。
+1. **同步基线**：开始工作前执行 `git fetch origin codex/xiaomi-sleep-connection`，确认本地 `origin/codex/xiaomi-sleep-connection` 是最新远端主线。
 2. **创建分支**：从该 SHA 创建独立分支和持久化 worktree；分支创建后不得再把其他功能、Bug、发布或规范改动混入其中。纯 TODO-only 记录按下方专用流程处理。
 3. **开发与验证**：在独立 worktree 中开发。功能必须完成必要的自动化验证和对应测试手册；Bug 按 `AGENTS.md` 的证据驱动流程调查和验证，并记录到 `Bugs/`。
 4. **提交**：验证通过后创建只包含当前工作项的 commit；提交前检查 diff、敏感信息和单文件大小，超过 5 MB 的文件按下方大文件授权规则执行。
-5. **创建 PR**：通过下方“PR 创建门禁”后 Push 分支并创建目标为远端 `main` 的 PR。可以提前创建 Draft PR 供审查。默认须完成本地验证、必要文档和必需 CI 才能 Ready 或合入；用户明确授权的 CI 例外见下方“用户明确授权的 CI 例外”，其他验收门禁仍适用。
-6. **更新基线**：PR 准备 Ready 前重新 fetch `origin/main`。主线前进时检查新增 diff 和合并冲突。存在冲突、共享依赖或相关行为变化时，先同步主线并重跑受影响验证；仅有无关变化时可保留分支基线，在 PR 记录最新主线 SHA、无冲突检查及影响判断。发布仍使用精确的最新已批准主线。
-7. **合入**：功能和 Bug 工作默认在 PR 审查完成且所有必需检查通过后合入 `main`；用户明确授权的 CI 例外按下节执行，合并方式遵守本文件的 PR 合并策略。
-8. **合入后收尾**：合入完成后 fetch 远端，将本地 `main` 快进到 `origin/main`，确认两者 SHA 一致并记录合入 commit。已合入分支和 worktree 先标记为已完成，清理或删除必须单独确认，不能借整理之名删除未核对的工作。
+5. **创建 PR**：通过下方“PR 创建门禁”后 Push 分支并创建目标为远端 `codex/xiaomi-sleep-connection` 的 PR。可以提前创建 Draft PR 供审查。默认须完成本地验证、必要文档和必需 CI 才能 Ready 或合入；用户明确授权的 CI 例外见下方“用户明确授权的 CI 例外”，其他验收门禁仍适用。
+6. **更新基线**：PR 准备 Ready 前重新 fetch `origin/codex/xiaomi-sleep-connection`。主线前进时检查新增 diff 和合并冲突。存在冲突、共享依赖或相关行为变化时，先同步主线并重跑受影响验证；仅有无关变化时可保留分支基线，在 PR 记录最新主线 SHA、无冲突检查及影响判断。发布仍使用精确的最新已批准主线。
+7. **合入**：功能和 Bug 工作默认在 PR 审查完成且所有必需检查通过后合入 `codex/xiaomi-sleep-connection`；用户明确授权的 CI 例外按下节执行，合并方式遵守本文件的 PR 合并策略。
+8. **合入后收尾**：合入完成后 fetch 远端，将本地 `codex/xiaomi-sleep-connection` 快进到 `origin/codex/xiaomi-sleep-connection`，确认两者 SHA 一致并记录合入 commit。已合入分支和 worktree 先标记为已完成，清理或删除必须单独确认，不能借整理之名删除未核对的工作。
 
 ## 用户明确授权的 CI 例外
 
@@ -49,7 +58,7 @@ G-CI.other-gates=retained
 - CI 例外只豁免 GitHub CI 的运行、结果或等待。最小本地检查、隐私边界、UI 证据、真实硬件验收、核心治理人工确认和发布签名、公证、来源及更新链路仍按其适用规范执行。
 - GitHub 默认保留所有 Required status checks；为 Repository Admin 配置 `pull_request` 模式的 Ruleset bypass，仅允许通过 PR 使用例外。平台只能检查角色和 PR，不能识别聊天授权；操作者仍须先核对上述授权记录。不得为单个 PR 临时删除检查、关闭 Ruleset 或改为直接 Push。
 - 例外仍使用普通 Merge 并绑定核对过的 PR Head SHA。权限不足或远端规则仍拒绝时，立即报告具体阻挡，保留 PR；不得无限等待或擅自扩大仓库权限。
-- CI 例外 PR 合入后，报告合并 Commit、已做本地验证和剩余验证边界。没有明确要求验证 `main` 时，不等待合入后 CI；不得把源码合入表述为发布或已通过 CI。
+- CI 例外 PR 合入后，报告合并 Commit、已做本地验证和剩余验证边界。没有明确要求验证 `codex/xiaomi-sleep-connection` 时，不等待合入后 CI；不得把源码合入表述为发布或已通过 CI。
 
 ## PR 创建门禁
 
@@ -60,7 +69,7 @@ G-DUP.inspect=relevant-description-files-diff
 ```
 
 - 每个 PR 必须且只能对应一项独立、可审查的功能、新增需求、Bug 修复或明确的规范变更；禁止把多个互不相关的工作项放入同一个 PR。
-- 创建任何 PR（包括 Draft PR）前，必须重新 fetch 并检查最新 `origin/main` 的相关代码和 commit 历史，确认主线尚未实现同类功能或修复相同、类似的问题；如果主线已经解决，不得创建重复 PR。
+- 创建任何 PR（包括 Draft PR）前，必须重新 fetch 并检查最新 `origin/codex/xiaomi-sleep-connection` 的相关代码和 commit 历史，确认主线尚未实现同类功能或修复相同、类似的问题；如果主线已经解决，不得创建重复 PR。
 - 创建 PR 前先扫描全部 Open（含 Draft）PR 的标题和标签，再按关键词、模块和路径筛选候选；相关候选必须查看描述、文件和必要 diff。对 Merged、Closed PR 使用同范围检索。筛选不足以确认无重复时，扩大检查。已有活动 PR 覆盖相同工作项时，不得重复创建；只有部分重叠或此前 PR 已关闭时，必须先确认范围差异，并在新 PR 中明确说明关联、差异及重新创建的原因。
 - 创建任何 PR（包括 Draft PR）前，必须检查相对目标分支的完整 diff 和 commit 列表。只要发现包含两个或更多互不相关的工作项，就必须停止创建 PR，先将其拆分到各自独立的分支、commit 和 PR；拆分完成前不允许创建该 PR。
 - PR 包含 UI 变更时，必须在 PR 描述中附上清晰的功能截图，展示本次修改后的实际界面和功能效果；截图缺失时，该 PR 只能保持 Draft，不得标记为 Ready 或合入。
@@ -87,8 +96,8 @@ G-TODO.product=forbidden
 
 - 本流程只适用于新增或更新 `TODO.md`（以及同一次记录所需的简短公开文档引用），且不修改业务代码、测试、配置、依赖、发布资产或用户可观察行为。
 - 所有 TODO-only 记录统一使用长期分支 `codex/todo_list`，不为每一条 TODO 新建分支或 worktree。独立记录可以按批次创建 commit，commit 只能包含该批 TODO 及必要文档引用；已在开发的功能条目随对应功能 PR 更新。
-- 开始记录前先 fetch `origin/main`，确认 `codex/todo_list` 已同步到最新主线；记录通过 `git diff --check`、文件范围、敏感信息和文件大小检查后，可以批次 Push，或继续更新同一个目标为 `main` 的 Draft PR；不要求每条记录立即创建 PR。批次只包含 TODO 记录及必要引用，在开始产品开发或声明主线已更新前合入。PR 仍受 `main` 的 Pull Request 和 Required status checks 保护；macOS CI 对 docs-only 变更只运行文档级步骤并返回既有 required contexts，不执行产品构建、测试、签名或发布。
-- 合入后 fetch 远端并确认本地 `main == origin/main`，再把 `codex/todo_list` 同步到最新主线，继续承载下一条 TODO。该长期分支不因单条 TODO 删除；任何清理仍需单独确认。
+- 开始记录前先 fetch `origin/codex/xiaomi-sleep-connection`，确认 `codex/todo_list` 已同步到最新主线；记录通过 `git diff --check`、文件范围、敏感信息和文件大小检查后，可以批次 Push，或继续更新同一个目标为 `codex/xiaomi-sleep-connection` 的 Draft PR；不要求每条记录立即创建 PR。批次只包含 TODO 记录及必要引用，在开始产品开发或声明主线已更新前合入。PR 仍受 `codex/xiaomi-sleep-connection` 的 Pull Request 和 Required status checks 保护；macOS CI 对 docs-only 变更只运行文档级步骤并返回既有 required contexts，不执行产品构建、测试、签名或发布。
+- 合入后 fetch 远端并确认本地主线与 `origin/codex/xiaomi-sleep-connection` 精确一致，再把 `codex/todo_list` 同步到最新主线，继续承载下一条 TODO。该长期分支不因单条 TODO 删除；任何清理仍需单独确认。
 - 如果一次 TODO 记录实际需要修改代码、测试、配置、依赖或发布行为，立即退出本流程，改按标准功能或 Bug 流程创建独立分支和 worktree，并执行相应 CI 与验收。
 
 ## 独立工作项提交边界
@@ -121,7 +130,7 @@ G-GOV.required-check=Repository governance
 - 核心治理变更必须有维护者或用户的明确批准，并在 PR 记录来源、日期、具体规则对照、文件范围及验证要求。已批准具体方案，且实现未超出该方案、本地静态检查通过、没有产品文件改动时，可以直接 Ready，无须重复确认。
 - 只有笼统的“修改规则”请求、方案尚未展示、范围或风险变化、必要检查失败时，PR 保持 Draft；先提供具体结果和差异，再取得批准。自动化 Agent 不得在缺少适用批准时自行 Ready、批准或合入。CI、零审批 ruleset 和机器人 bypass 均不能替代此批准。
 - 发布流程可以更新 `RELEASING.md` 及其直接测试手册，但不得借发布流程重构删除或弱化核心治理规则；发布 PR 若同时修改核心治理文件，必须通过治理变更门禁并单独说明原因。
-- `scripts/verify-repository-governance.sh` 和 `.github/workflows/repository-governance.yml` 是本文件关键规则的静态守护检查。`Repository governance` 必须配置为 `main` 的 Required status check；用户明确授权的 CI 例外只通过上述 PR bypass 使用，不移除默认检查；规则增删必须与该检查、PR 模板和迁移说明在同一个独立治理 PR 中同步更新，不得只改规范文本而不更新守护检查。治理 PR 可以同时修改 `DOCUMENTATION.md`、README 的稳定文档入口和与本次规则直接冲突的专项规范、产品合同或测试合同，但必须使用静态 allowlist，且不得包含 `Sources/`、`Tests/` 下的可执行功能测试代码、产品配置、依赖或发布资产。
+- `scripts/verify-repository-governance.sh` 和 `.github/workflows/repository-governance.yml` 是本文件关键规则的静态守护检查。`Repository governance` 必须配置为 `codex/xiaomi-sleep-connection` 的 Required status check；用户明确授权的 CI 例外只通过上述 PR bypass 使用，不移除默认检查；规则增删必须与该检查、PR 模板和迁移说明在同一个独立治理 PR 中同步更新，不得只改规范文本而不更新守护检查。治理 PR 可以同时修改 `DOCUMENTATION.md`、README 的稳定文档入口和与本次规则直接冲突的专项规范、产品合同或测试合同，但必须使用静态 allowlist，且不得包含 `Sources/`、`Tests/` 下的可执行功能测试代码、产品配置、依赖或发布资产。
 
 ## PR 合并策略
 
@@ -132,7 +141,7 @@ G-MERGE.default=merge
 - PR 默认使用 GitHub 的普通 Merge（保留合并提交），保留 PR 分支中的独立提交、作者、时间顺序和完整 Git history；即使 PR 只有一个提交，也不自动改用 squash。
 - 只有用户明确要求，或仓库维护者在该 PR/项目规范中明确记录了具体例外时，才允许使用 squash merge 或 rebase merge。执行前必须在交付说明中写明合并方式及其影响。
 - 自动化工具不得因为“提交较少”“历史更整洁”或界面默认按钮而擅自选择 squash/rebase；未指定时按本节的普通 Merge 执行。
-- 合并后必须重新 `git fetch origin main`，记录远端 `main` 的合并提交 SHA，并确认目标分支已包含该 PR；已经合入的提交不得为了更换合并方式而改写 `main` 历史。
+- 合并后必须重新 `git fetch origin codex/xiaomi-sleep-connection`，记录远端 `codex/xiaomi-sleep-connection` 的合并提交 SHA，并确认目标分支已包含该 PR；已经合入的提交不得为了更换合并方式而改写 `codex/xiaomi-sleep-connection` 历史。
 
 ## 公开构建与私有集成边界
 

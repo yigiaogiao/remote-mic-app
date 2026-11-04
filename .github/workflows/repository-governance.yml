@@ -2,10 +2,10 @@ name: Repository Governance
 
 on:
   pull_request:
-    branches: [main]
+    branches: [codex/xiaomi-sleep-connection]
     types: [opened, synchronize, reopened, edited, ready_for_review, converted_to_draft]
   push:
-    branches: [main]
+    branches: [codex/xiaomi-sleep-connection]
 
 permissions:
   contents: read
