@@ -1,5 +1,16 @@
 # SayAll
 
+> **Personal Mac mini sleep-isolation experiment, maintained by yigiaogiao.** This fork explores RC003 sleep isolation and wake reconnection. Positive usage reports cover one Mac mini only; other Mac mini systems are unverified. It is not an official SayAll release.
+>
+> The upstream author independently tested the same isolation mechanism on a MacBook Pro and observed Bluetooth HID FullWake twice. An app disconnection does not prove removal as a system wake source. [Upstream PR #778](https://github.com/HD838A/remote-mic-app/pull/778) is closed; this branch does not claim a general fix.
+>
+> Source includes the local 2.0.0 / 267.3 reconnection changes; upstream version fields do not identify a published candidate. No experimental installer is currently offered here. Upstream downloads linked below do not contain these changes. Real wake-recovery performance and sleep regression remain unverified; the full test suite was blocked by the local XCTest environment.
+>
+> Existing local candidate users can select the RC003 in Connection & Voice and enable the experimental sleep-isolation switch while keeping the app running. After full wake, a remote button press may be needed. Disable the switch to stop future isolation. To revert, quit the candidate before launching the original app.
+>
+> Upstream history, attribution and the [GPL-3.0 license](LICENSE.md) are retained. The original upstream introduction follows.
+
+
 [简体中文](README.md)
 
 [Website](https://sayall.app/en/) · [Setup tutorial](https://sayall.app/en/tutorial/) · [Weibo](https://weibo.com/getSayAll)
